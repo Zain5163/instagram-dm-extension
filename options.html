@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>IG DM Options</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    textarea { width: 100%; height: 80px; }
+  </style>
+</head>
+<body>
+  <h2>Settings</h2>
+  <label>OpenAI API Key:
+    <input type="password" id="api-key" placeholder="sk-..." style="width:300px" />
+  </label>
+  <button id="save-key">Save Key</button>
+  <h3>Message Templates</h3>
+  <select id="template-select" size="5" style="width:100%"></select>
+  <input id="template-name" placeholder="Template name" />
+  <textarea id="template-text" placeholder="Hello {{first_name}}, ..."></textarea>
+  <button id="save-template">Save Template</button>
+  <button id="delete-template">Delete Selected</button>
+  <script src="storage.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
