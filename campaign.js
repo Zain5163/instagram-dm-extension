@@ -2,6 +2,7 @@ let usernames = [];
 let index = 0;
 let messageBox;
 let generateBtn;
+let statuses = {};
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -10,8 +11,11 @@ async function init() {
   const listName = params.get('list');
   const lists = await Storage.getLists();
   usernames = lists[listName] || [];
+  statuses = await Storage.getLeadsWithStatus();
   document.getElementById('next').addEventListener('click', next);
   document.getElementById('open-profile').addEventListener('click', openProfile);
+  document.getElementById('mark-contacted').addEventListener('click', () => setStatus('Contacted'));
+  document.getElementById('mark-skipped').addEventListener('click', () => setStatus('Skipped'));
   messageBox = document.getElementById('message');
   generateBtn = document.createElement('button');
   generateBtn.id = 'generate-dm';
@@ -30,7 +34,10 @@ function update() {
   }
   const username = usernames[index];
   document.getElementById('username').textContent = '@' + username;
-  document.getElementById('stats').textContent = `${index} of ${usernames.length} contacted`;
+  const contactedCount = Object.values(statuses).filter(s => s === 'Contacted').length;
+  document.getElementById('stats').textContent = `${contactedCount} of ${usernames.length} contacted`;
+  const status = statuses[username] || '';
+  document.getElementById('status').textContent = status ? `Status: ${status}` : '';
   messageBox.value = '';
 }
 
@@ -41,6 +48,13 @@ function openProfile() {
 
 function next() {
   index++;
+  update();
+}
+
+async function setStatus(status) {
+  const username = usernames[index];
+  await Storage.updateStatus(username, status);
+  statuses[username] = status;
   update();
 }
 

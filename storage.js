@@ -12,13 +12,51 @@ const Storage = {
   async saveLists(lists) {
     return this.set('lists', lists);
   },
+  async exportListCSV(listName) {
+    const lists = await this.getLists();
+    const statuses = await this.getLeadsWithStatus();
+    const usernames = lists[listName] || [];
+    const lines = ['username,status'];
+    usernames.forEach(u => {
+      const status = statuses[u] || 'Not Contacted';
+      lines.push(`${u},${status}`);
+    });
+    return lines.join('\n');
+  },
+  async importCSVToList(listName, csvText) {
+    const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+    const usernames = [];
+    const statusUpdates = {};
+    lines.forEach(line => {
+      const [usernameRaw, statusRaw] = line.split(',');
+      const username = usernameRaw?.trim();
+      if (!username || username.toLowerCase() === 'username') return;
+      let status = statusRaw?.trim().toLowerCase();
+      if (status === 'contacted') status = 'Contacted';
+      else if (status === 'skipped') status = 'Skipped';
+      else status = 'Not Contacted';
+      usernames.push(username);
+      statusUpdates[username] = status;
+    });
+    await this.addToList(listName, usernames);
+    if (Object.keys(statusUpdates).length) {
+      const statuses = (await this.get('statuses')) || {};
+      Object.assign(statuses, statusUpdates);
+      await this.set('statuses', statuses);
+    }
+  },
   async addToList(listName, usernames) {
     const lists = await this.getLists();
     if (!lists[listName]) lists[listName] = [];
     const set = new Set(lists[listName]);
     usernames.forEach(u => set.add(u));
     lists[listName] = Array.from(set);
-    return this.saveLists(lists);
+    await this.saveLists(lists);
+    const statuses = (await this.get('statuses')) || {};
+    lists[listName].forEach(u => {
+      if (!statuses[u]) statuses[u] = 'Not Contacted';
+    });
+    return this.set('statuses', statuses);
   },
   async removeFromList(listName, username) {
     const lists = await this.getLists();
@@ -35,6 +73,14 @@ const Storage = {
     const lists = await this.getLists();
     delete lists[listName];
     return this.saveLists(lists);
+  },
+  async updateStatus(username, status) {
+    const statuses = (await this.get('statuses')) || {};
+    statuses[username] = status || 'Not Contacted';
+    return this.set('statuses', statuses);
+  },
+  async getLeadsWithStatus() {
+    return (await this.get('statuses')) || {};
   },
   async getTemplates() {
     return (await this.get('templates')) || {};
