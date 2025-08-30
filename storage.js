@@ -12,6 +12,19 @@ const Storage = {
   async saveLists(lists) {
     return this.set('lists', lists);
   },
+  async exportListCSV(listName) {
+    const lists = await this.getLists();
+    const usernames = lists[listName] || [];
+    return ['username', ...usernames].join('\n');
+  },
+  async importCSVToList(listName, csvText) {
+    const usernames = csvText
+      .split(/\r?\n/)
+      .flatMap(line => line.split(','))
+      .map(u => u.trim())
+      .filter(u => u && u.toLowerCase() !== 'username');
+    return this.addToList(listName, usernames);
+  },
   async addToList(listName, usernames) {
     const lists = await this.getLists();
     if (!lists[listName]) lists[listName] = [];
@@ -35,6 +48,14 @@ const Storage = {
     const lists = await this.getLists();
     delete lists[listName];
     return this.saveLists(lists);
+  },
+  async updateStatus(username, status) {
+    const statuses = (await this.get('statuses')) || {};
+    statuses[username] = status;
+    return this.set('statuses', statuses);
+  },
+  async getLeadsWithStatus() {
+    return (await this.get('statuses')) || {};
   },
   async getTemplates() {
     return (await this.get('templates')) || {};
