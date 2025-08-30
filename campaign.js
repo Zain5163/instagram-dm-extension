@@ -14,8 +14,8 @@ async function init() {
   statuses = await Storage.getLeadsWithStatus();
   document.getElementById('next').addEventListener('click', next);
   document.getElementById('open-profile').addEventListener('click', openProfile);
-  document.getElementById('mark-contacted').addEventListener('click', () => setStatus('contacted'));
-  document.getElementById('mark-skipped').addEventListener('click', () => setStatus('skipped'));
+  document.getElementById('mark-contacted').addEventListener('click', () => setStatus('Contacted'));
+  document.getElementById('mark-skipped').addEventListener('click', () => setStatus('Skipped'));
   messageBox = document.getElementById('message');
   generateBtn = document.createElement('button');
   generateBtn.id = 'generate-dm';

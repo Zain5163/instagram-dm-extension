@@ -18,7 +18,7 @@ const Storage = {
     const usernames = lists[listName] || [];
     const lines = ['username,status'];
     usernames.forEach(u => {
-      const status = statuses[u] || '';
+      const status = statuses[u] || 'Not Contacted';
       lines.push(`${u},${status}`);
     });
     return lines.join('\n');
@@ -27,15 +27,16 @@ const Storage = {
     const lines = csvText.split(/\r?\n/).filter(l => l.trim());
     const usernames = [];
     const statusUpdates = {};
-    lines.forEach((line, idx) => {
+    lines.forEach(line => {
       const [usernameRaw, statusRaw] = line.split(',');
       const username = usernameRaw?.trim();
-      const status = statusRaw?.trim();
       if (!username || username.toLowerCase() === 'username') return;
+      let status = statusRaw?.trim().toLowerCase();
+      if (status === 'contacted') status = 'Contacted';
+      else if (status === 'skipped') status = 'Skipped';
+      else status = 'Not Contacted';
       usernames.push(username);
-      if (status && status.toLowerCase() !== 'status') {
-        statusUpdates[username] = status;
-      }
+      statusUpdates[username] = status;
     });
     await this.addToList(listName, usernames);
     if (Object.keys(statusUpdates).length) {
@@ -50,7 +51,12 @@ const Storage = {
     const set = new Set(lists[listName]);
     usernames.forEach(u => set.add(u));
     lists[listName] = Array.from(set);
-    return this.saveLists(lists);
+    await this.saveLists(lists);
+    const statuses = (await this.get('statuses')) || {};
+    lists[listName].forEach(u => {
+      if (!statuses[u]) statuses[u] = 'Not Contacted';
+    });
+    return this.set('statuses', statuses);
   },
   async removeFromList(listName, username) {
     const lists = await this.getLists();
@@ -70,11 +76,7 @@ const Storage = {
   },
   async updateStatus(username, status) {
     const statuses = (await this.get('statuses')) || {};
-    if (status) {
-      statuses[username] = status;
-    } else {
-      delete statuses[username];
-    }
+    statuses[username] = status || 'Not Contacted';
     return this.set('statuses', statuses);
   },
   async getLeadsWithStatus() {
