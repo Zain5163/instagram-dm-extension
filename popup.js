@@ -61,9 +61,8 @@ async function collectFromPage() {
 
 async function exportCSV() {
   const listName = document.getElementById('list-select').value;
-  const lists = await Storage.getLists();
-  const usernames = lists[listName] || [];
-  const csv = usernames.join('\n');
+  if (!listName) return alert('Select a list first.');
+  const csv = await Storage.exportListCSV(listName);
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
   chrome.downloads?.download({ url, filename: `${listName}.csv` });
 }
@@ -72,9 +71,12 @@ async function importCSV(e) {
   const file = e.target.files[0];
   if (!file) return;
   const text = await file.text();
-  const usernames = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
   const listName = document.getElementById('list-select').value;
-  await Storage.addToList(listName, usernames);
+  if (!listName) {
+    alert('Select a list first.');
+    return;
+  }
+  await Storage.importCSVToList(listName, text);
   renderUsernames();
   e.target.value = '';
 }
